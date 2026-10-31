@@ -1,0 +1,14 @@
+{
+  "name": "zahav",
+  "version": "0.1.0",
+  "description": "ZAHAV — painel unificado ImovelUm (Fluxo de Caixa + Vendas + Viabilidade)",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4"
+  }
+}

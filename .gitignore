@@ -1,0 +1,20 @@
+# deps
+node_modules/
+**/node_modules/
+
+# dados e segredos — NUNCA versionar (vivem no disco persistente do Render)
+data/
+**/data/
+*.db
+*.sqlite
+*.sqlite3
+**/auth.json
+**/notion-secret.json
+
+# logs e temporarios
+*.log
+.DS_Store
+
+# automacao local do Windows (aposentada na nuvem)
+*.vbs
+*.bat

@@ -1,0 +1,18 @@
+{
+  "name": "fluxo-caixa-imovelum",
+  "version": "0.1.0",
+  "description": "Sistema de fluxo de caixa ImovelUm (migrado de Cash Flow v1.xlsm)",
+  "type": "module",
+  "scripts": {
+    "extract": "node scripts/extract.js",
+    "seed": "node scripts/seed.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "xlsx": "^0.18.5"
+  }
+}

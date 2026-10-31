@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZAHAV · Configuração</title>
+  <link rel="icon" href="logo.png" type="image/png" />
+  <style>
+    :root{ --bg:#0A0F1E; --gold:#D4AF37; --ink:#cdd9ff; --ink-dim:#7e8bb5; --panel:#0e1426; --line:#1b2540; --accent:#3b6fe0; }
+    *{box-sizing:border-box} body{margin:0;height:100vh;background:var(--bg);color:var(--ink);
+      font-family:"Segoe UI",Arial,system-ui,sans-serif;display:grid;place-items:center}
+    .card{background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:30px;width:min(420px,92vw);text-align:center}
+    .pep{height:64px;mix-blend-mode:lighten;filter:drop-shadow(0 0 8px rgba(212,175,55,.5))}
+    h1{margin:8px 0 2px;letter-spacing:4px;color:var(--gold)}
+    .sub{color:var(--ink-dim);font-size:13px;margin-bottom:18px}
+    label{display:block;text-align:left;font-size:12px;color:var(--ink-dim);margin:12px 0 4px}
+    input{width:100%;background:#0b1124;border:1px solid var(--line);color:var(--ink);padding:11px;border-radius:9px;font-size:15px}
+    button{margin-top:18px;width:100%;background:var(--accent);border:none;color:#fff;padding:12px;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer}
+    button:hover{filter:brightness(1.1)}
+    .erro{color:#f87171;font-size:13px;margin-top:10px;min-height:18px}
+    .qr{background:#fff;padding:10px;border-radius:10px;display:inline-block;margin:6px 0}
+    .secret{font-family:monospace;font-size:12px;color:var(--gold);word-break:break-all;background:#0b1124;padding:8px;border-radius:8px;border:1px solid var(--line)}
+    .hidden{display:none}
+    .passos{text-align:left;font-size:13px;color:var(--ink-dim);line-height:1.6;margin:10px 0}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="logo.png" class="pep" alt="ZAHAV" />
+    <h1>ZAHAV</h1>
+    <div class="sub">Configuração inicial — defina sua senha e o 2FA</div>
+
+    <div id="step1">
+      <label>Crie sua senha (mín. 8 caracteres)</label>
+      <input id="s1" type="password" autocomplete="new-password" />
+      <label>Confirme a senha</label>
+      <input id="s2" type="password" autocomplete="new-password" />
+      <button onclick="configurar()">Configurar</button>
+      <div class="erro" id="err1"></div>
+    </div>
+
+    <div id="step2" class="hidden">
+      <div class="passos">
+        1. Instale o <b>Google Authenticator</b> ou <b>Microsoft Authenticator</b> no celular.<br>
+        2. Escaneie o QR abaixo (ou digite o código manual).<br>
+        3. Pronto — a partir do próximo login você usará senha + o código de 6 dígitos.
+      </div>
+      <div class="qr"><img id="qr" alt="QR 2FA" /></div>
+      <label>Código manual (se não puder escanear)</label>
+      <div class="secret" id="secret"></div>
+      <button onclick="location.href='/login'">Ir para o login →</button>
+    </div>
+  </div>
+  <script>
+    async function configurar() {
+      const a = document.getElementById('s1').value, b = document.getElementById('s2').value;
+      const err = document.getElementById('err1'); err.textContent = '';
+      if (a.length < 8) return err.textContent = 'Senha precisa de no mínimo 8 caracteres.';
+      if (a !== b) return err.textContent = 'As senhas não conferem.';
+      const r = await fetch('/api/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: a }) }).then((x) => x.json());
+      if (!r.ok) return err.textContent = r.erro || 'Erro ao configurar.';
+      document.getElementById('qr').src = r.qr;
+      document.getElementById('secret').textContent = r.secret;
+      document.getElementById('step1').classList.add('hidden');
+      document.getElementById('step2').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

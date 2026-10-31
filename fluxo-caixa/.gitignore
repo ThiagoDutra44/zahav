@@ -1,0 +1,13 @@
+node_modules/
+npm-debug.log*
+# arquivos temporários do SQLite (WAL/SHM) — o banco em si (fluxo.db) é versionado como snapshot
+data/*.db-wal
+data/*.db-shm
+# backups locais do banco
+data/*.bak-*
+data/backups/
+.DS_Store
+
+# integração Notion — segredo e log (nunca versionar)
+data/notion-secret.json
+data/notion-sync.log

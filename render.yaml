@@ -1,0 +1,29 @@
+# Blueprint do Render — cria o serviço ZAHAV com disco persistente.
+# Importar em: Render > New > Blueprint (aponta pro repo).
+services:
+  - type: web
+    name: zahav
+    runtime: node
+    plan: starter            # ~US$7/mes, sempre ligado (nao dorme)
+    region: virginia         # US-East: menor latencia p/ Brasil entre as regioes do Render
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true         # cada push no GitHub re-publica
+    healthCheckPath: /healthz
+    disk:
+      name: zahav-data
+      mountPath: /data       # os bancos + login + backups vivem aqui (persistente)
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: FLUXO_DB
+        value: /data/fluxo.db
+      - key: VENDAS_DB
+        value: /data/vendas.db
+      - key: VIAB_DB
+        value: /data/viabilidade.db
+      - key: AUTH_FILE
+        value: /data/auth.json
+      - key: NOTION_TOKEN
+        sync: false           # segredo — preencher no painel do Render (nao fica no repo)

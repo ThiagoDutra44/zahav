@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fluxo de Caixa · ImovelUm 2026</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">IM</span>
+      <div>
+        <h1>Fluxo de Caixa <span>2026</span></h1>
+        <small>ImovelUm · migrado de Cash Flow v1.xlsm</small>
+      </div>
+    </div>
+    <div class="cards-top" id="cardsTop"></div>
+  </header>
+  <section class="cards" id="cards"></section>
+  <section id="ccConsolidado" class="cc-consol hidden"></section>
+
+  <nav class="weeknav">
+    <button id="prev" title="Anterior">‹</button>
+    <div id="weeklabel" class="weeklabel"></div>
+    <button id="next" title="Próximo">›</button>
+    <button id="hoje" class="ghost">Hoje</button>
+    <div class="viewmodes" id="viewmodes">
+      <button data-view="semana" class="active">Semana</button>
+      <button data-view="2sem">2 semanas</button>
+      <button data-view="4sem">4 semanas</button>
+      <button data-view="mes">Mês</button>
+    </div>
+    <select id="ccFilter" class="ccfilter-sel" title="Destacar um centro de custo — os demais apagam e saem das somas"><option value="">centro: todos</option></select>
+    <div class="spacer"></div>
+    <button id="btnGhost" class="ghost" title="Modo ghost: marque lançamentos p/ tirá-los da conta da semana (pré-pendências)">👻 Ghost</button>
+    <button id="btnLocalizar" class="ghost" title="Achar um lançamento pelo nome e remarcar a data">🔎 Localizar</button>
+    <button id="btnMover" class="warn" disabled>Reagendar selecionados</button>
+    <button id="btnExcluirSel" class="danger" disabled>Excluir selecionados</button>
+    <button id="btnAdd" class="primary">+ Lançamento</button>
+    <button id="btnPriv" class="ghost" title="Modo privacidade: borra a tela e revela só o dia atual e onde o mouse está (quem está ao lado não lê)">🕶️</button>
+  </nav>
+
+  <div id="ccBanner" class="ccbanner hidden"></div>
+  <div id="privacyFilm" aria-hidden="true"></div>
+  <main id="grid" class="grid"></main>
+
+  <footer class="foot">
+    <button id="footToggle" class="ghost foot-toggle" title="Mostrar/ocultar atalhos">⋯ Atalhos</button>
+    <div id="footActions" class="foot-actions">
+      <button id="btnConsolidado" class="ghost">Consolidado mensal</button>
+      <button id="btnReceitas" class="ghost">📈 Previsão de receita</button>
+      <button id="btnRecorrentes" class="ghost">🔁 Recorrentes</button>
+      <button id="btnRecorrentesDutra" class="ghost">👤 Recorrentes Dutra</button>
+      <button id="btnFecharMes" class="ghost">🔒 Fechar mês</button>
+      <button id="btnMapaPend" class="ghost">🧭 Mapa de Pendências</button>
+      <button id="btnMapaPendDutra" class="ghost">👤 Mapa Pendências Dutra</button>
+      <button id="btnRelatorio" class="ghost">🖨️ Relatório</button>
+      <button id="btnFatReal" class="ghost">💰 Faturamento Real</button>
+      <button id="btnNotion" class="ghost" title="Contas registradas pela Márcia no Notion, aguardando sua aprovação">📥 Entrada Notion</button>
+    </div>
+    <span id="status"></span>
+  </footer>
+
+  <!-- Modal genérico -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box" id="modalBox"></div>
+  </div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

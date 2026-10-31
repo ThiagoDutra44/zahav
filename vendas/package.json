@@ -1,0 +1,19 @@
+{
+  "name": "vendas-imovelum",
+  "version": "0.1.0",
+  "description": "Sistema de vendas ImovelUm (migrado de VENDAS 2026.xlsm) — funil, dashboard e ranking",
+  "type": "module",
+  "scripts": {
+    "extract": "node scripts/extract.js",
+    "seed": "node scripts/seed.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "ponte": "node scripts/ponte-fluxo.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "xlsx": "^0.18.5"
+  }
+}

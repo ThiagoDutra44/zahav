@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Relatório · Fluxo de Caixa</title>
+<style>
+  :root{ --ink:#1a2233; --dim:#5b6478; --line:#d8dee9; --gold:#9c7a1e; --pos:#0a7d33; --neg:#c0392b; --bg:#eef1f6; --paper:#fff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,system-ui,sans-serif;font-size:13px}
+  .toolbar{position:sticky;top:0;z-index:5;background:#0e1426;color:#cdd9ff;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .toolbar label{font-size:11px;color:#7e8bb5;margin-right:4px}
+  .toolbar input,.toolbar select{background:#0b1124;border:1px solid #1b2540;color:#cdd9ff;padding:6px 8px;border-radius:7px;font-size:13px}
+  .toolbar button{border:none;border-radius:7px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:13px}
+  .toolbar .go{background:#3b6fe0;color:#fff}
+  .toolbar .print{background:#D4AF37;color:#1a1300}
+  .toolbar .sp{flex:1}
+  .paper{max-width:820px;margin:18px auto;background:var(--paper);padding:30px 34px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+  .hd{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--gold);padding-bottom:10px;margin-bottom:6px}
+  .hd .ttl{font-size:22px;font-weight:800;letter-spacing:.5px}
+  .hd .ttl small{display:block;font-size:12px;font-weight:600;color:var(--gold);letter-spacing:3px}
+  .hd .meta{text-align:right;font-size:12px;color:var(--dim);line-height:1.5}
+  .periodo{font-size:14px;margin:10px 0 16px;font-weight:600}
+  .periodo b{color:var(--gold)}
+  .resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .box{border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+  .box .l{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+  .box .v{font-size:16px;font-weight:800;margin-top:2px}
+  .box .s{font-size:10.5px;color:var(--dim);margin-top:1px}
+  .pos{color:var(--pos)} .neg{color:var(--neg)}
+  h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:4px;margin:18px 0 8px}
+  table{width:100%;border-collapse:collapse}
+  .cc td{padding:4px 6px;border-bottom:1px solid var(--line)}
+  .cc td.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .cc th{text-align:left;font-size:10.5px;color:var(--dim);text-transform:uppercase;border-bottom:1.5px solid var(--ink);padding:5px 6px}
+  .cc th.r{text-align:right}
+  .cc td.rn{text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:var(--dim)}
+  .cc tr.tot td{border-top:1.5px solid var(--ink);font-weight:800}
+  .blocos{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  @media print{.blocos{break-inside:avoid}}
+  .lan{font-size:12px}
+  .lan th{text-align:left;font-size:10.5px;color:var(--dim);text-transform:uppercase;border-bottom:1.5px solid var(--ink);padding:5px 6px}
+  .lan th.r,.lan td.r{text-align:right;font-variant-numeric:tabular-nums}
+  .lan td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  .lan tr.dia td{background:#f4f0e2;font-weight:700;color:var(--gold);border-top:1px solid var(--gold)}
+  .lan tr.sub td{font-weight:700;border-bottom:1.5px solid var(--line)}
+  .tag{font-size:10px;padding:1px 6px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
+  .tag.real{border-color:var(--pos);color:var(--pos)}
+  .pdot{font-size:10px;font-weight:800}
+  .totfim{display:flex;justify-content:flex-end;gap:24px;margin-top:14px;padding-top:10px;border-top:2px solid var(--ink);font-size:14px;font-weight:800}
+  .vazio{color:var(--dim);text-align:center;padding:24px}
+  .ass{margin-top:40px;display:flex;justify-content:space-between;gap:40px;font-size:12px;color:var(--dim)}
+  .ass div{flex:1;border-top:1px solid var(--ink);padding-top:5px;text-align:center}
+  @media print{
+    body{background:#fff} .toolbar{display:none}
+    .paper{box-shadow:none;margin:0;max-width:none;border-radius:0;padding:0}
+    @page{margin:14mm}
+    .lan tr.dia td{background:#f4f0e2 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .box{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <span><label>De</label><input type="date" id="de"></span>
+    <span><label>Até</label><input type="date" id="ate"></span>
+    <span><label>Caixa</label>
+      <select id="livro"><option value="empresa">ImovelUm</option><option value="dutra">Dutra</option></select>
+    </span>
+    <button class="go" onclick="carregar()">Atualizar</button>
+    <span class="sp"></span>
+    <button class="print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  </div>
+
+  <div class="paper" id="paper"><div class="vazio">Carregando…</div></div>
+
+<script>
+const qs = new URLSearchParams(location.search);
+const BRL = (n) => (n<0?'-':'') + 'R$ ' + Math.abs(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const _SIGLAS = new Set(['pdv','iof','pj']); const _MINUS = new Set(['de','da','do','e']);
+const capCC = (s) => String(s||'').split(/\s+/).map((w)=>{const low=w.toLowerCase(); if(w==='·')return '·'; if(_MINUS.has(low))return low; if(_SIGLAS.has(low))return w.toUpperCase(); return w?w.charAt(0).toUpperCase()+w.slice(1).toLowerCase():w;}).join(' ');
+const cls = (n) => n<0?'neg':'pos';
+const dDMA = (iso)=>{const [y,m,d]=iso.split('-');return `${d}/${m}/${y}`;};
+const dDM  = (iso)=>{const [,m,d]=iso.split('-');return `${d}/${m}`;};
+const WD = ['dom','seg','ter','qua','qui','sex','sáb'];
+const wd = (iso)=>WD[new Date(iso+'T00:00:00').getDay()];
+function mesAtual(){ const t=new Date(); const y=t.getFullYear(),m=String(t.getMonth()+1).padStart(2,'0');
+  const last=new Date(y,t.getMonth()+1,0).getDate(); return [`${y}-${m}-01`,`${y}-${m}-${String(last).padStart(2,'0')}`]; }
+
+const [m0,m1]=mesAtual();
+document.getElementById('de').value  = qs.get('de')  || m0;
+document.getElementById('ate').value = qs.get('ate') || m1;
+if(qs.get('livro')) document.getElementById('livro').value = qs.get('livro');
+
+async function carregar(){
+  const de=document.getElementById('de').value, ate=document.getElementById('ate').value, livro=document.getElementById('livro').value;
+  const paper=document.getElementById('paper');
+  if(!de||!ate){ paper.innerHTML='<div class="vazio">Escolha as datas.</div>'; return; }
+  let r;
+  try{ r = await fetch(`api/relatorio?de=${de}&ate=${ate}&livro=${livro}`).then(x=>x.json()); }
+  catch(e){ paper.innerHTML='<div class="vazio">Erro ao carregar.</div>'; return; }
+  if(r.erro){ paper.innerHTML='<div class="vazio">'+r.erro+'</div>'; return; }
+
+  const livroNome = livro==='dutra'?'Caixa Dutra':'ImovelUm';
+  const agora = new Date().toLocaleString('pt-BR');
+
+  // resumo
+  const resumo = `
+    <div class="resumo">
+      <div class="box"><div class="l">Caixa abertura</div><div class="v ${cls(r.caixa_abertura)}">${BRL(r.caixa_abertura)}</div><div class="s">realizado ${BRL(r.caixa_abertura_real)}</div></div>
+      <div class="box"><div class="l">Receitas</div><div class="v pos">${BRL(r.receitas)}</div><div class="s">real ${BRL(r.recReal)} · prev ${BRL(r.recPrev)}</div></div>
+      <div class="box"><div class="l">Despesas</div><div class="v neg">${BRL(r.despesas)}</div><div class="s">real ${BRL(r.despReal)} · orç ${BRL(r.despPrev)}</div></div>
+      <div class="box"><div class="l">Resultado</div><div class="v ${cls(r.resultado)}">${BRL(r.resultado)}</div><div class="s">receitas − despesas</div></div>
+      <div class="box" style="grid-column:span 2"><div class="l">Caixa fechamento (projetado)</div><div class="v ${cls(r.caixa_fechamento)}">${BRL(r.caixa_fechamento)}</div></div>
+      <div class="box" style="grid-column:span 2"><div class="l">Caixa fechamento (realizado)</div><div class="v ${cls(r.caixa_fechamento_real)}">${BRL(r.caixa_fechamento_real)}</div></div>
+    </div>`;
+
+  // despesa operacional líquida + consolidado de prioridades
+  const d = r.descontos || { encargos_adm: 0, repasses: 0, comissao: 0, amortizacoes: 0 };
+  const pr = r.prioridades || { p1: 0, p2: 0, total: 0 };
+  const blocos = `<div class="blocos">
+    <div><h3>Despesa operacional (líquida)</h3><table class="cc"><tbody>
+      <tr><td>Despesas totais</td><td class="r neg">${BRL(r.despesas)}</td></tr>
+      <tr><td>(−) Encargos adm</td><td class="rn">${BRL(d.encargos_adm)}</td></tr>
+      <tr><td>(−) Repasses</td><td class="rn">${BRL(d.repasses)}</td></tr>
+      <tr><td>(−) Comissão</td><td class="rn">${BRL(d.comissao)}</td></tr>
+      <tr><td>(−) Amortizações</td><td class="rn">${BRL(d.amortizacoes)}</td></tr>
+      <tr class="tot"><td>= Operacional líquido</td><td class="r ${cls(r.despesa_liquida)}">${BRL(r.despesa_liquida)}</td></tr>
+    </tbody></table></div>
+    <div><h3>Consolidado de prioridades</h3><table class="cc"><tbody>
+      <tr><td>🔴 P1</td><td class="r neg">${BRL(pr.p1)}</td></tr>
+      <tr><td>🔵 P2</td><td class="r neg">${BRL(pr.p2)}</td></tr>
+      <tr class="tot"><td>Total P1 + P2</td><td class="r neg">${BRL(pr.total)}</td></tr>
+    </tbody></table></div>
+  </div>`;
+
+  // centro de custo
+  const cc = r.porCC.length ? `<h3>Por centro de custo</h3><table class="cc">
+    <thead><tr><th>Centro de custo</th><th class="r">Real</th><th class="r">Orçado</th><th class="r">Total</th></tr></thead>
+    <tbody>${r.porCC.map(c=>`<tr><td>${capCC(c.nome)}</td><td class="rn">${c.real?BRL(c.real):'—'}</td><td class="rn">${c.orcado?BRL(c.orcado):'—'}</td><td class="r ${cls(c.total)}">${BRL(c.total)}</td></tr>`).join('')}</tbody></table>` : '';
+
+  // lançamentos agrupados por dia
+  let linhas='', diaAtual='', subDia=0, buffer=[];
+  const flush=()=>{ if(diaAtual){ buffer.push(`<tr class="sub"><td colspan="4">Subtotal ${dDM(diaAtual)}</td><td class="r ${cls(subDia)}">${BRL(subDia)}</td></tr>`);} };
+  for(const l of r.lancamentos){
+    if(l.data!==diaAtual){ flush(); diaAtual=l.data; subDia=0;
+      buffer.push(`<tr class="dia"><td colspan="5">${wd(l.data)} · ${dDMA(l.data)}</td></tr>`); }
+    subDia += l.valor;
+    const tipo = l.tipo==='real'?'<span class="tag real">real</span>':'<span class="tag">orç</span>';
+    const prio = l.prioridade==='P1'?'<span class="pdot neg">● P1</span>':l.prioridade==='P2'?'<span class="pdot" style="color:#2b6cb0">● P2</span>':'';
+    buffer.push(`<tr><td>${dDM(l.data)}</td><td>${l.nome} ${prio}</td><td>${capCC(l.centro_custo||'')}</td><td>${tipo}</td><td class="r ${cls(l.valor)}">${BRL(l.valor)}</td></tr>`);
+  }
+  flush();
+  linhas = buffer.join('');
+  const det = r.lancamentos.length ? `<h3>Lançamentos (${r.lancamentos.length})</h3>
+    <table class="lan"><thead><tr><th>Data</th><th>Descrição</th><th>Centro de custo</th><th>Tipo</th><th class="r">Valor</th></tr></thead>
+    <tbody>${linhas}</tbody></table>
+    <div class="totfim"><span>Receitas: <span class="pos">${BRL(r.receitas)}</span></span><span>Despesas: <span class="neg">${BRL(r.despesas)}</span></span><span>Resultado: <span class="${cls(r.resultado)}">${BRL(r.resultado)}</span></span></div>`
+    : '<div class="vazio">Nenhum lançamento no período.</div>';
+
+  paper.innerHTML = `
+    <div class="hd">
+      <div class="ttl"><small>ZAHAV · by ImovelUm</small>Relatório de Fluxo de Caixa</div>
+      <div class="meta">Caixa: <b>${livroNome}</b><br>Gerado em ${agora}</div>
+    </div>
+    <div class="periodo">Período: <b>${dDMA(r.de)}</b> a <b>${dDMA(r.ate)}</b></div>
+    ${resumo}${blocos}${cc}${det}
+    <div class="ass"><div>Conferido por</div><div>Aprovado por</div></div>`;
+}
+carregar();
+</script>
+</body>
+</html>

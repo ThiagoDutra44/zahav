@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZAHAV · ImovelUm</title>
+  <link rel="icon" href="logo.png" type="image/png" />
+  <style>
+    :root{ --bg:#0A0F1E; --gold:#D4AF37; --ink:#cdd9ff; --ink-dim:#7e8bb5; --struct:#002060; --line:#1b2540; }
+    *{box-sizing:border-box} html,body{margin:0;height:100%}
+    body{background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,system-ui,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    .zbar{display:flex;align-items:center;gap:16px;padding:8px 18px;background:linear-gradient(180deg,#0c1430,#0a0f1e);border-bottom:2px solid var(--gold)}
+    .zlogo{display:flex;align-items:center;gap:11px}
+    .zlogo .ztext{display:flex;flex-direction:column;line-height:1.05}
+    .zlogo .zname{font-weight:800;letter-spacing:3px;font-size:20px;color:var(--gold)}
+    .zlogo .zby{font-size:11px;letter-spacing:.5px;color:var(--ink-dim);font-weight:500;margin-top:3px}
+    .zlogo .gem{width:30px;height:30px;border-radius:8px;background:var(--gold);display:grid;place-items:center;color:#1a1300;font-weight:900;font-size:15px}
+    /* fundo preto da pepita "some" na barra escura via mix-blend-mode; sem editar a imagem */
+    .zlogo .pepita{height:42px;width:auto;object-fit:contain;mix-blend-mode:lighten;filter:drop-shadow(0 0 5px rgba(212,175,55,.4))}
+    .zsair{margin-left:14px;background:transparent;border:1px solid var(--ink-dim,#7e8bb5);color:var(--ink-dim,#7e8bb5);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+    .zsair:hover{border-color:#f87171;color:#f87171}
+    .zsel{display:flex;gap:0;border:1px solid var(--gold);border-radius:10px;overflow:hidden;margin-left:8px}
+    .zsel button{border:none;border-right:1px solid var(--line);background:transparent;color:var(--ink-dim);
+      width:155px;padding:9px 0;text-align:center;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:.15s}
+    .zsel button:last-child{border-right:none}
+    .zsel button:hover:not(.active){color:#fff}
+    .zsel button.active{background:var(--gold);color:#1a1300}
+    .zspacer{flex:1}
+    .zuser{color:var(--ink-dim);font-size:13px}
+    .zframe{flex:1;border:none;width:100%;background:var(--bg)}
+  </style>
+</head>
+<body>
+  <div class="zbar">
+    <div class="zlogo"><img src="logo.png" alt="ZAHAV" class="pepita" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'gem',textContent:'Z'}))"><div class="ztext"><span class="zname">ZAHAV</span><span class="zby">by ImovelUm</span></div></div>
+    <div class="zsel" id="sel">
+      <button data-mod="vendas">📈 SALES</button>
+      <button data-mod="fluxo" class="active">💵 CASH FLOW</button>
+      <button data-mod="viabilidade">🏗️ VIABILITY</button>
+    </div>
+    <div class="zspacer"></div>
+    <div class="zuser">ImovelUm</div>
+    <button id="sair" class="zsair" title="Encerrar a sessão e pedir login">Sair</button>
+  </div>
+  <iframe id="frame" class="zframe" src="fluxo/"></iframe>
+
+  <script>
+    const sel = document.getElementById('sel');
+    const frame = document.getElementById('frame');
+    sel.querySelectorAll('button').forEach((b) => {
+      b.onclick = () => {
+        sel.querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+        frame.src = b.dataset.mod + '/';
+      };
+    });
+    document.getElementById('sair').onclick = async () => {
+      try { await fetch('api/logout', { method: 'POST' }); } catch (e) {}
+      location.href = 'login';
+    };
+  </script>
+</body>
+</html>

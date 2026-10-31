@@ -1,0 +1,19 @@
+{
+  "name": "viabilidade-imovelum",
+  "version": "0.1.0",
+  "description": "Sistema de viabilidade ImovelUm (migrado de FINANCEIRO - VIABILIDADE 2026.xlsx) — orçamento, folha, previsibilidade de VGV e simulação de resultado",
+  "type": "module",
+  "scripts": {
+    "extract": "node scripts/extract.js",
+    "seed": "node scripts/seed.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "ponte": "node scripts/ponte-realizado.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "xlsx": "^0.18.5"
+  }
+}
