@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyFileSync, mkdirSync, readdirSync, rmSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { openDb, DB_PATH } from './db.js';
+import { openDb, DB_PATH, SCHEMA } from './db.js';
 import {
   ehReceita, valorComSinal, addDays, weekday, proximoDiaUtil,
   gerarLancamentosRecorrencia, isoToParts, partsToISO, ultimoDiaDoMes,
@@ -12,6 +12,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const db = openDb();
+db.exec(SCHEMA); // garante tabelas mesmo sem seed (boot limpo em disco vazio, p/ a nuvem)
 // Receita de administração digitada à mão (mês a mês). Fica SÓ aqui — não gera lançamento, não entra
 // no caixa nem em break-even. Serve unicamente para compor a coluna Adm. do Faturamento Real.
 db.exec('CREATE TABLE IF NOT EXISTS faturamento_adm (ano INTEGER NOT NULL, mes INTEGER NOT NULL, valor REAL NOT NULL DEFAULT 0, PRIMARY KEY (ano, mes))');
