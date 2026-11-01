@@ -170,5 +170,25 @@ if (vendasApp) app.use('/vendas', vendasApp);
 if (viabApp) app.use('/viabilidade', viabApp);
 app.use(express.static(PUBLIC));
 
+// ---------- Notion sync agendado (roda na nuvem, só se NOTION_TOKEN estiver definido) ----------
+if (process.env.NOTION_TOKEN) {
+  try {
+    const { runSync } = await import('../../fluxo-caixa/notion-sync.mjs');
+    const everyMs = Math.max(60000, Number(process.env.NOTION_SYNC_MS) || 5 * 60 * 1000);
+    let rodando = false;
+    const tick = async () => {
+      if (rodando) return; // nunca sobrepõe duas passadas
+      rodando = true;
+      try { await runSync(); } catch (e) { console.warn('[notion-sync] erro:', e.message); }
+      finally { rodando = false; }
+    };
+    setTimeout(tick, 30000);     // primeira passada ~30s após o boot
+    setInterval(tick, everyMs);  // depois a cada 5 min (padrão)
+    console.log(`Notion sync ATIVO (a cada ${everyMs} ms).`);
+  } catch (e) { console.warn('Notion sync não iniciou:', e.message); }
+} else {
+  console.log('Notion sync inativo (defina NOTION_TOKEN para ligar).');
+}
+
 const PORT = process.env.PORT || 5190;
 app.listen(PORT, () => console.log(`ZAHAV rodando em http://localhost:${PORT} (login ${auth.estaConfigurado() ? 'configurado' : 'PENDENTE — abra /setup'})`));

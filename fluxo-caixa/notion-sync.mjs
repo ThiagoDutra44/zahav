@@ -21,7 +21,7 @@
 // ============================================================================
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -198,15 +198,22 @@ async function setup() {
   log('SETUP concluído.');
 }
 
-// ---------- main ----------
-(async () => {
+// ---------- runSync: exportável p/ agendamento in-process (nuvem) + CLI ----------
+export async function runSync() {
   log(`=== notion-sync início ${SETUP ? '(setup)' : ''}${DRY ? ' DRY_RUN' : ''} ===`);
+  let db = null;
   try {
     if (SETUP) { await setup(); log('=== fim ==='); return; }
-    const db = new DatabaseSync(FLUXO_DB);
+    db = new DatabaseSync(FLUXO_DB);
     db.exec('PRAGMA busy_timeout = 4000;');
     await ida(db);
     await volta(db);
     log('=== fim ===');
-  } catch (e) { log('FALHA: ' + e.message); process.exitCode = 1; }
-})();
+  } catch (e) { log('FALHA: ' + e.message); throw e; }
+  finally { try { db?.close(); } catch { /* ok */ } }
+}
+
+// Rodado direto na linha de comando? executa uma vez (comportamento antigo, p/ debug manual).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runSync().catch(() => { process.exitCode = 1; });
+}
