@@ -2,8 +2,9 @@
 import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { writeFileSync, unlinkSync, existsSync } from 'node:fs';
+import { writeFileSync, readFileSync, unlinkSync, existsSync } from 'node:fs';
 import { timingSafeEqual } from 'node:crypto';
+import { DatabaseSync } from 'node:sqlite';
 import * as auth from './auth.js';
 import { DB_PATH as FLUXO_DB_PATH } from '../../fluxo-caixa/src/db.js';
 import { DB_PATH as VENDAS_DB_PATH } from '../../vendas/src/db.js';
@@ -122,6 +123,36 @@ app.post('/api/restore', (req, res) => {
   } catch (e) { return res.status(500).json({ erro: e.message }); }
   res.json({ ok: true, restaurados: feitos, reiniciando: true });
   setTimeout(() => process.exit(0), 800); // sai; o Render reinicia o serviço e reabre os dados restaurados
+});
+
+// ---------- BACKUP (download protegido por token) — alimenta o job diário off-site ----------
+// Formato de saída = MESMO que /api/restore aceita, então um backup pode ser re-restaurado direto.
+const BACKUP_TOKEN = process.env.BACKUP_TOKEN || '';
+function backupOk(t) {
+  if (!BACKUP_TOKEN || !t) return false;
+  const a = Buffer.from(String(t)), b = Buffer.from(BACKUP_TOKEN);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+function dumpDb(srcPath) {
+  // VACUUM INTO: cópia consistente (inclui o WAL) sem travar o banco em uso; depois lê e apaga o temp.
+  const tmp = srcPath + '.bak.tmp';
+  for (const ext of ['', '-wal', '-shm']) { try { if (existsSync(tmp + ext)) unlinkSync(tmp + ext); } catch { /* ok */ } }
+  const db = new DatabaseSync(srcPath, { readOnly: true });
+  try { db.exec(`VACUUM INTO '${tmp.replace(/'/g, "''")}'`); } finally { db.close(); }
+  const b64 = readFileSync(tmp).toString('base64');
+  for (const ext of ['', '-wal', '-shm']) { try { if (existsSync(tmp + ext)) unlinkSync(tmp + ext); } catch { /* ok */ } }
+  return b64;
+}
+app.get('/api/backup', (req, res) => {
+  if (!backupOk(req.query.token)) return res.status(404).send('Not found');
+  try {
+    const out = { ts: new Date().toISOString() };
+    out.fluxo = dumpDb(FLUXO_DB_PATH);
+    out.vendas = dumpDb(VENDAS_DB_PATH);
+    out.viabilidade = dumpDb(VIAB_DB_PATH);
+    out.auth = existsSync(AUTH_PATH) ? readFileSync(AUTH_PATH).toString('base64') : null;
+    res.json(out);
+  } catch (e) { res.status(500).json({ erro: e.message }); }
 });
 
 // ---------- PORTÃO: tudo abaixo exige login ----------

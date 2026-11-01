@@ -1,0 +1,73 @@
+name: Backup ZAHAV (diario)
+
+# Baixa um snapshot do ZAHAV (nuvem), criptografa com AES256 e guarda:
+#  - na branch "backups" (retem os 30 mais recentes)
+#  - como artefato baixavel (90 dias)
+# Independe do PC do Thiago. Rode manual em Actions > "Backup ZAHAV (diario)" > Run workflow.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'      # 06:00 UTC = 03:00 America/Sao_Paulo (todo dia)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: zahav-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Baixar backup do ZAHAV
+        env:
+          TOKEN: ${{ secrets.BACKUP_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -fsS --max-time 120 "https://zahav.conexaoum.com.br/api/backup?token=${TOKEN}" -o "$RUNNER_TEMP/backup.json"
+          test -s "$RUNNER_TEMP/backup.json"
+          node -e "const j=require('$RUNNER_TEMP/backup.json'); for(const k of ['fluxo','vendas','viabilidade']){ if(!j[k]) throw new Error('faltou '+k); } console.log('backup ok, ts='+j.ts);"
+
+      - name: Criptografar (AES256)
+        env:
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          FILE="zahav-$(date -u +%Y%m%d-%H%M%S).json.gpg"
+          gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase "$PASS" -o "$RUNNER_TEMP/$FILE" "$RUNNER_TEMP/backup.json"
+          rm -f "$RUNNER_TEMP/backup.json"
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+
+      - name: Guardar na branch backups (retem 30)
+        run: |
+          set -euo pipefail
+          git config user.name "zahav-backup-bot"
+          git config user.email "backup@zahav.local"
+          if git ls-remote --exit-code --heads origin backups >/dev/null 2>&1; then
+            git fetch origin backups
+            git checkout -B backups origin/backups
+          else
+            git checkout --orphan backups
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p backups
+          cp "$RUNNER_TEMP/$FILE" "backups/$FILE"
+          # mantem apenas os 30 mais recentes
+          ls -1 backups/*.json.gpg | sort | head -n -30 | xargs -r rm -f
+          git add -A backups
+          git commit -m "Backup ZAHAV $FILE"
+          git push origin backups
+
+      - name: Artefato baixavel (90 dias)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ runner.temp }}/${{ env.FILE }}
+          retention-days: 90
