@@ -18,3 +18,13 @@ data/
 # automacao local do Windows (aposentada na nuvem)
 *.vbs
 *.bat
+dist/
+.output/
+.vercel/
+.astro/
+.env
+.env.*
+!.env.example
+.vercel-token
+.secrets/
+Thumbs.db
