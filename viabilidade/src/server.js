@@ -161,6 +161,32 @@ app.delete('/api/custos/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- CUSTOS PESSOAIS (aba PESSOAL) — orçado pessoal, ISOLADO da empresa ----------
+app.get('/api/pessoal', (req, res) => {
+  res.json(db.prepare('SELECT * FROM custos_pessoais WHERE ano=? ORDER BY ordem, id').all(anoDe(req)));
+});
+app.post('/api/pessoal', (req, res) => {
+  const b = req.body || {};
+  if (!b.categoria) return res.status(400).json({ erro: 'categoria é obrigatória' });
+  const info = db.prepare(`INSERT INTO custos_pessoais (ano, categoria, valor, tipo, ordem)
+    VALUES (?,?,?,?,?)`).run(
+    parseInt(b.ano) || new Date().getFullYear(),
+    up(b.categoria), num(b.valor), (b.tipo === 'variavel' ? 'variavel' : 'fixo'), parseInt(b.ordem) || 0);
+  res.json(db.prepare('SELECT * FROM custos_pessoais WHERE id=?').get(info.lastInsertRowid));
+});
+app.put('/api/pessoal/:id', (req, res) => {
+  const cur = db.prepare('SELECT * FROM custos_pessoais WHERE id=?').get(req.params.id);
+  if (!cur) return res.status(404).json({ erro: 'não encontrado' });
+  const m = { ...cur, ...req.body };
+  db.prepare('UPDATE custos_pessoais SET categoria=?, valor=?, tipo=?, ativo=? WHERE id=?').run(
+    up(m.categoria), num(m.valor), (m.tipo === 'variavel' ? 'variavel' : 'fixo'), m.ativo ? 1 : 0, cur.id);
+  res.json(db.prepare('SELECT * FROM custos_pessoais WHERE id=?').get(cur.id));
+});
+app.delete('/api/pessoal/:id', (req, res) => {
+  db.prepare('DELETE FROM custos_pessoais WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ---------- COLABORADORES (folha) ----------
 app.get('/api/colaboradores', (req, res) => {
   res.json(db.prepare('SELECT * FROM colaboradores WHERE ano=? ORDER BY ordem, id').all(anoDe(req)));

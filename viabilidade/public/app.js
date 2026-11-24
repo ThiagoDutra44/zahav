@@ -20,7 +20,9 @@ const view = $('#view');
 let statusT;
 function status(msg) { $('#status').textContent = msg; clearTimeout(statusT); statusT = setTimeout(() => ($('#status').textContent = ''), 2500); }
 
-const ADD_LABEL = { orcado: '+ Custo', folha: '+ Colaborador', previsao: '+ Previsão', dashboard: '', cenarios: '' };
+const ADD_LABEL = { orcado: '+ Custo', folha: '+ Colaborador', previsao: '+ Previsão', pessoal: '+ Custo pessoal', dashboard: '', cenarios: '' };
+// mapa aba -> endpoint da API (usado na edição inline, no toggle/del e no modal)
+const EP = { orcado: 'custos', pessoal: 'pessoal', folha: 'colaboradores', previsao: 'previsoes' };
 
 // ---------- bootstrap ----------
 async function boot() {
@@ -47,6 +49,7 @@ async function render() {
   if (State.tab === 'folha') return renderFolha();
   if (State.tab === 'previsao') return renderPrevisao();
   if (State.tab === 'cenarios') return renderCenarios();
+  if (State.tab === 'pessoal') return renderPessoal();
 }
 
 // ---------- DASHBOARD ----------
@@ -174,6 +177,43 @@ function rowCusto(c) {
 // botão liga/desliga: verde "ON" = ativo, cinza "OFF" = desligado
 function toggleBtn(ativo) {
   return `<button class="icon-btn tgl ${ativo ? 'on' : ''}" data-toggle title="${ativo ? 'Desligar (tira da conta)' : 'Ligar (volta para a conta)'}">${ativo ? 'ON' : 'OFF'}</button>`;
+}
+
+// ---------- PESSOAL (orçado pessoal, isolado — não encosta em nenhum número da empresa) ----------
+let pessoalCache = [];
+async function renderPessoal() {
+  pessoalCache = await api(`api/pessoal?ano=${State.ano}`);
+  const ativos = pessoalCache.filter((c) => c.ativo);
+  const total = ativos.reduce((a, c) => a + c.valor, 0);
+  const fixo = ativos.filter((c) => c.tipo === 'fixo').reduce((a, c) => a + c.valor, 0);
+  const vari = ativos.filter((c) => c.tipo === 'variavel').reduce((a, c) => a + c.valor, 0);
+  const nOff = pessoalCache.filter((c) => !c.ativo).length;
+  $('#cards').innerHTML = `<div class="card gold"><div class="lbl">Custo pessoal / mês</div><div class="val">${brl(total)}</div><div class="sub">${brlk(total * 12)}/ano</div></div>`;
+  const rows = pessoalCache.length
+    ? pessoalCache.map((c) => rowPessoal(c)).join('')
+    : `<tr><td class="empty" colspan="5">Sem custos pessoais ainda — clique em "+ Custo pessoal".</td></tr>`;
+  view.innerHTML = `
+    <div class="kpis">
+      <div class="kpi gold"><div class="lbl">Custo pessoal / mês</div><div class="val">${brl(total)}</div><div class="sub">${brl(total * 12)}/ano</div></div>
+      <div class="kpi"><div class="lbl">Fixo / mês</div><div class="val">${brl(fixo)}</div></div>
+      <div class="kpi"><div class="lbl">Variável / mês</div><div class="val">${brl(vari)}</div></div>
+    </div>
+    <div class="panel">
+      <h3>Orçado pessoal — ${brl(total)}/mês <span class="hint">(só seu · isolado, não entra em nenhum número da empresa${nOff ? ` · ${nOff} desligado(s), fora da conta` : ''} · edite direto na tabela)</span></h3>
+      <div class="tbl-scroll"><table class="editable">
+        <thead><tr><th></th><th class="l">Categoria</th><th class="l">Tipo</th><th>Valor / mês</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>`;
+}
+function rowPessoal(c) {
+  return `<tr data-id="${c.id}" class="${c.ativo ? '' : 'off'}">
+    <td style="text-align:center">${toggleBtn(c.ativo)}</td>
+    <td class="l"><input value="${c.categoria}" data-f="categoria"></td>
+    <td class="l"><select data-f="tipo"><option value="fixo" ${c.tipo === 'fixo' ? 'selected' : ''}>fixo</option><option value="variavel" ${c.tipo === 'variavel' ? 'selected' : ''}>variável</option></select></td>
+    <td class="num">${moneyInp(c.valor, 'data-f="valor"')}</td>
+    <td><button class="icon-btn danger" data-del>✕</button></td>
+  </tr>`;
 }
 
 // ---------- FOLHA ----------
@@ -309,13 +349,14 @@ view.addEventListener('change', async (e) => {
     if (linCen) { await put(`api/cenario_linhas/${linCen.dataset.lin}`, { [f]: val }); status('Cenário atualizado'); return renderCenarios(); }
     if (!trCusto) return;
     const id = trCusto.dataset.id;
-    const ep = State.tab === 'orcado' ? 'custos' : State.tab === 'folha' ? 'colaboradores' : 'previsoes';
+    const ep = EP[State.tab];
     await put(`api/${ep}/${id}`, { [f]: val });
     status('Salvo ✓');
     // recalcula totais nas abas que dependem de soma
     if (State.tab === 'previsao') renderPrevisao();
     else if (State.tab === 'folha' && f === 'salario') { /* folha sincroniza no back */ }
     else if (State.tab === 'orcado') renderOrcado();
+    else if (State.tab === 'pessoal') renderPessoal();
   } catch { status('Erro ao salvar'); }
 });
 // campo de dinheiro: ao focar mostra o número cru p/ editar; ao sair, reformata "R$ ..."
@@ -323,7 +364,7 @@ view.addEventListener('focusin', (e) => { const i = e.target; if (i.classList &&
 view.addEventListener('focusout', (e) => { const i = e.target; if (i.classList && i.classList.contains('moneyinp')) { const n = parseMoney(i.value); i.value = n ? brl(n) : ''; } });
 view.addEventListener('click', async (e) => {
   const tr = e.target.closest('tr[data-id]'); if (!tr) return;
-  const ep = State.tab === 'orcado' ? 'custos' : State.tab === 'folha' ? 'colaboradores' : 'previsoes';
+  const ep = EP[State.tab];
   // liga/desliga (preserva o valor, só muda se entra na conta)
   const tgl = e.target.closest('[data-toggle]');
   if (tgl) {
@@ -360,6 +401,10 @@ function openAdd() {
         <div class="field"><label>Comissão %</label><input id="m_comissao_pct" type="number" step="0.1" value="2"></div>
       </div>
       <p class="hint">Os valores mês a mês você preenche direto na tabela depois de criar.</p>` },
+    pessoal: { titulo: 'Novo custo pessoal', campos: `
+      <div class="field"><label>Categoria</label><input id="m_categoria" placeholder="ex.: PLANO DE SAÚDE"></div>
+      <div class="field"><label>Tipo</label><select id="m_tipo"><option value="fixo">fixo</option><option value="variavel">variável</option></select></div>
+      <div class="field"><label>Valor mensal</label><input id="m_valor" type="number" step="0.01" value="0"></div>` },
   }[State.tab];
   if (!cfg) return;
   box.innerHTML = `<h2>${cfg.titulo}</h2>${cfg.campos}
@@ -372,7 +417,8 @@ function openAdd() {
     if (State.tab === 'orcado') body = { ...body, categoria: v('m_categoria'), centro_custo: v('m_centro'), tipo: v('m_tipo'), valor: v('m_valor') };
     if (State.tab === 'folha') body = { ...body, nome: v('m_nome'), cargo: v('m_cargo'), salario: v('m_salario') };
     if (State.tab === 'previsao') body = { ...body, canal: v('m_canal'), grupo: v('m_grupo'), comissao_pct: v('m_comissao_pct') };
-    const ep = State.tab === 'orcado' ? 'custos' : State.tab === 'folha' ? 'colaboradores' : 'previsoes';
+    if (State.tab === 'pessoal') body = { ...body, categoria: v('m_categoria'), tipo: v('m_tipo'), valor: v('m_valor') };
+    const ep = EP[State.tab];
     const r = await post(`api/${ep}`, body);
     if (r.erro) return status(r.erro);
     $('#modal').classList.add('hidden'); status('Adicionado ✓'); render();

@@ -101,4 +101,17 @@ CREATE TABLE IF NOT EXISTS config (
   chave TEXT PRIMARY KEY,
   valor TEXT
 );
+
+-- ORÇADO PESSOAL (aba PESSOAL) — isolado: NÃO entra em nenhum número da empresa.
+CREATE TABLE IF NOT EXISTS custos_pessoais (
+  id INTEGER PRIMARY KEY,
+  ano INTEGER NOT NULL,
+  categoria TEXT NOT NULL,            -- ex.: PLANO DE SAÚDE, ALUGUEL CASA, CARRO
+  valor REAL NOT NULL DEFAULT 0,      -- valor mensal orçado
+  tipo TEXT NOT NULL DEFAULT 'fixo',  -- fixo | variavel
+  ativo INTEGER NOT NULL DEFAULT 1,   -- 1 = entra na soma; 0 = desligado
+  ordem INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_pessoais_ano ON custos_pessoais(ano);
 `;
